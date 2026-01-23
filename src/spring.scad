@@ -1,20 +1,20 @@
 // Height in millimeters
-$height = 2; // [1:0.5:20]
+height = 2; // [1:0.5:20]
 // Number of steps
-$steps = 15; // [2:1:100]
+steps = 15; // [2:1:100]
 // Gap size between steps in millimeters
-$gap = 3.75; // [1:0.25:20]
+gap = 3.75; // [1:0.25:20]
 // Make the start and end of the spring rounded
-$tips = true;
+tips = true;
 // Spring line thickness
-$thickness = 1.75; // [0.5:0.25:20]
+thickness = 1.75; // [0.5:0.25:20]
 // Spring width in millimeters (must be at least: gap x 2 + thickness x 3)
-$width = 16; // [4:1:60]
+width = 16; // [4:1:60]
 
-$minWidth = $gap * 2 + $thickness * 3;
-$fixedWidth = $width < $minWidth ? $minWidth : $width;
-$stepSize = $gap + $thickness;
-$arch = $gap + $thickness * 2;
+minWidth = gap * 2 + thickness * 3;
+fixedWidth = width < minWidth ? minWidth : width;
+stepSize = gap + thickness;
+arch = gap + thickness * 2;
 
 spring();
 
@@ -22,30 +22,30 @@ module spring()
 {
 	$fn = 128;
 
-	if ($tips)
+	if (tips)
 	{
-		translate([($fixedWidth - $arch) * -0.5, 0])
+		translate([(fixedWidth - arch) * -0.5, 0])
 			tip();
-		translate([($fixedWidth - $arch) * ($steps % 2 ? 0.5 : -0.5), $stepSize * ($steps - 1)])
+		translate([(fixedWidth - arch) * (steps % 2 ? 0.5 : -0.5), stepSize * (steps - 1)])
 			tip();
 	}
 
-	maxCount = $steps / 2 - 1;
+	maxCount = steps / 2 - 1;
 
-	for ($step = [0 : maxCount])
+	for (step = [0 : maxCount])
 	{
-		translate([0, $step * 2 * $stepSize])
+		translate([0, step * 2 * stepSize])
 			part();
 
-		if ($step < maxCount)
+		if (step < maxCount)
 		{
-			translate([0, ($step + 0.5) * 2 * $stepSize])
+			translate([0, (step + 0.5) * 2 * stepSize])
 				rotate([0, 180, 0])
 					part();
 		}
 	}
 
-	translate([0, ($steps / 2 - 0.5) * 2 * $stepSize])
+	translate([0, (steps / 2 - 0.5) * 2 * stepSize])
 		line();
 }
 
@@ -57,26 +57,26 @@ module part()
 
 module arch()
 {
-	centerOffset = ($fixedWidth - $arch) / 2;
-	lineSize = $stepSize / 2;
+	centerOffset = (fixedWidth - arch) / 2;
+	lineSize = stepSize / 2;
 
 	difference()
 	{
 		translate([centerOffset, lineSize])
-			cylinder($height, d=$arch, center=true);
+			cylinder(height, d=arch, center=true);
 		translate([centerOffset, lineSize])
-			cylinder($height, d=$arch-$thickness*2, center=true);
+			cylinder(height, d=arch-thickness*2, center=true);
 		translate([0, lineSize])
-			cube([$fixedWidth - $arch, $gap, $height], center=true);
+			cube([fixedWidth - arch, gap, height], center=true);
 	}
 }
 
 module line()
 {
-	cube([$fixedWidth - $arch, $thickness, $height], center=true);
+	cube([fixedWidth - arch, thickness, height], center=true);
 }
 
 module tip()
 {
-	cylinder($height, d=$thickness, center=true);
+	cylinder(height, d=thickness, center=true);
 }
