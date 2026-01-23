@@ -8,11 +8,17 @@ gap = 3.75; // [1:0.25:20]
 tips = true;
 // Spring line thickness
 thickness = 1.75; // [0.5:0.25:20]
-// Spring width in millimeters (must be at least: gap x 2 + thickness x 3)
+// Spring width in millimeters
 width = 16; // [4:1:60]
 
 minWidth = gap * 2 + thickness * 3;
-fixedWidth = width < minWidth ? minWidth : width;
+
+assert(
+	width >= minWidth,
+	str("Width \"", width, "\" is too small for the current \"gap\" and \"thickness\" settings. Width must be at least \"", minWidth, "\" (gap x 2 + thickness x 3)")
+);
+
+
 stepSize = gap + thickness;
 arch = gap + thickness * 2;
 
@@ -24,9 +30,9 @@ module spring()
 
 	if (tips)
 	{
-		translate([(fixedWidth - arch) * -0.5, 0])
+		translate([(width - arch) * -0.5, 0])
 			tip();
-		translate([(fixedWidth - arch) * (steps % 2 ? 0.5 : -0.5), stepSize * (steps - 1)])
+		translate([(width - arch) * (steps % 2 ? 0.5 : -0.5), stepSize * (steps - 1)])
 			tip();
 	}
 
@@ -57,7 +63,7 @@ module part()
 
 module arch()
 {
-	centerOffset = (fixedWidth - arch) / 2;
+	centerOffset = (width - arch) / 2;
 	lineSize = stepSize / 2;
 
 	difference()
@@ -67,13 +73,13 @@ module arch()
 		translate([centerOffset, lineSize])
 			cylinder(height, d=arch-thickness*2, center=true);
 		translate([0, lineSize])
-			cube([fixedWidth - arch, gap, height], center=true);
+			cube([width - arch, gap, height], center=true);
 	}
 }
 
 module line()
 {
-	cube([fixedWidth - arch, thickness, height], center=true);
+	cube([width - arch, thickness, height], center=true);
 }
 
 module tip()
