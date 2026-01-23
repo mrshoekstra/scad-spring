@@ -10,7 +10,6 @@ Spring_thickness = 1.75; // [0.5:0.25:20]
 // Spring width / X-axis (millimeters)
 Spring_width = 16; // [4:1:60]
 
-
 /* [Steps] */
 // Number of ladder steps / horizontal lines
 Steps_count = 15; // [2:1:100]
@@ -18,6 +17,8 @@ Steps_count = 15; // [2:1:100]
 Steps_gap = 3.75; // [1:0.25:20]
 
 /* [Ends] */
+// Set the width of the start and end of the spring
+Ends_width = "D"; // [D:Default, H:Half, F:Full];
 // Make the start and end tips of the spring rounded
 Ends_rounded = true;
 
@@ -28,6 +29,7 @@ springThickness = Spring_thickness;
 springWidth = Spring_width;
 stepsCount = Steps_count;
 stepsGap = Steps_gap;
+endsWidth = Ends_width;
 endsRounded = Ends_rounded;
 
 minWidth = stepsGap * 2 + springThickness * 3;
