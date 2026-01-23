@@ -3,11 +3,11 @@
 Preview_resolution = 16; // [8, 16, 32, 64, 128]
 
 /* [Spring] */
-// Spring height / Z-axis (millimeters)
+// Layer height / Z-axis (millimeters)
 Spring_height = 2; // [1:0.1:20]
 // Spring line thickness (millimeters)
 Spring_thickness = 1.75; // [0.5:0.25:20]
-// Spring width / X-axis (millimeters)
+// Spring width (millimeters)
 Spring_width = 16; // [4:1:60]
 
 /* [Steps] */
@@ -17,8 +17,6 @@ Steps_count = 15; // [2:1:100]
 Steps_gap = 3.75; // [1:0.25:20]
 
 /* [Ends] */
-// Set the width of the start and end of the spring
-Ends_width = "D"; // [D:Default, H:Half, F:Full];
 // Make the start and end tips of the spring rounded
 Ends_rounded = true;
 
@@ -29,80 +27,114 @@ springThickness = Spring_thickness;
 springWidth = Spring_width;
 stepsCount = Steps_count;
 stepsGap = Steps_gap;
-endsWidth = Ends_width;
 endsRounded = Ends_rounded;
 
-minWidth = stepsGap * 2 + springThickness * 3;
+minWidth = stepsGap * 1.5 + springThickness * 2;
+partPosition = stepsGap + springThickness;
+archOuterDiameter = stepsGap + springThickness * 2;
+archPositionX = (springWidth - archOuterDiameter) / 2;
+archPositionY = archOuterDiameter / 2;
+lineWidth = springWidth - archOuterDiameter;
+springDepth = partPosition * (stepsCount - 1) + springThickness;
 
 assert(
 	springWidth >= minWidth,
-	str("Width \"", springWidth, "\" is too small for the current Gap and Thickness settings. Width must be at least: \"", minWidth, "\" (Gap x 2 + Thickness x 3)")
+	str("Width \"", springWidth, "\" is too small for the current Gap and Thickness settings. Width must be at least: \"", minWidth, "\" (Gap x 1.5 + Thickness x 2)")
 );
 
-partPosition = stepsGap + springThickness;
-archOuterDiameter = stepsGap + springThickness * 2;
+echo(str("Spring depth: ", springDepth, "mm"));
 
 spring();
 
 module spring()
 {
-	if (endsRounded)
-	{
-		translate([(springWidth - archOuterDiameter) * -0.5, 0])
-			tip();
-		translate([(springWidth - archOuterDiameter) * (stepsCount % 2 ? 0.5 : -0.5), partPosition * (stepsCount - 1)])
-			tip();
-	}
-
-	maxCount = stepsCount / 2 - 1;
-
-	for (step = [0 : maxCount])
-	{
-		translate([0, step * 2 * partPosition])
-			part();
-
-		if (step < maxCount)
+	springPositionY = springDepth / -2;
+	translate([0, springPositionY])
+		union()
 		{
-			translate([0, (step + 0.5) * 2 * partPosition])
-				rotate([0, 180, 0])
-					part();
-		}
-	}
+			if (endsRounded)
+			{
+				tipPositionX = (springWidth - archOuterDiameter) * -0.5;
+				tipPositionY = springThickness / 2;
+				tip(springHeight, springThickness, tipPositionX, tipPositionY);
 
-	translate([0, (stepsCount / 2 - 0.5) * 2 * partPosition])
-		line();
+				tipPositionX2 = (springWidth - archOuterDiameter) * (stepsCount % 2 ? 0.5 : -0.5);
+				tipPositionY2 = partPosition * (stepsCount - 1) + springThickness / 2;
+				tip(springHeight, springThickness, tipPositionX2, tipPositionY2);
+			}
+
+			stepsCountMax = stepsCount / 2 - 1;
+
+			for (step = [0 : stepsCountMax])
+			{
+				translate([0, step * 2 * partPosition])
+					part();
+
+				if (step < stepsCountMax)
+				{
+					translate([0, (step + 0.5) * 2 * partPosition])
+						mirror([1, 0, 0])
+							part();
+				}
+			}
+
+			linePositionY = (stepsCount - 1) * partPosition;
+			line(lineWidth, springThickness, springHeight, positionY=linePositionY);
+		}
 }
 
 module part()
 {
-	line();
-	arch();
+	line(lineWidth, springThickness, springHeight, positionY=0);
+	arch(springHeight, archOuterDiameter, springThickness, archPositionX, archPositionY);
 }
 
-module arch()
+module arch(height, diameter, thickness, positionX="center", positionY="center")
 {
-	centerOffsetX = (springWidth - archOuterDiameter) / 2;
-	centerOffsetY = partPosition / 2;
-	archInnerDiameter = archOuterDiameter - springThickness * 2;
+	positionX = positionX == "center"
+		? diameter / -2
+		: positionX;
+	positionY = positionY == "center"
+		? diameter / -2
+		: positionY;
+	holeDiameter = diameter - thickness * 2;
+	holePositionX = diameter * -1;
+	holePositionY = stepsGap / -2;
+	cubePositionX = diameter * -1;
+	cubePositionY = diameter / -2;
 
-	difference()
-	{
-		translate([centerOffsetX, centerOffsetY])
-			cylinder(springHeight, d=archOuterDiameter, center=true);
-		translate([centerOffsetX, centerOffsetY])
-			cylinder(springHeight, d=archInnerDiameter, center=true);
-		translate([0, centerOffsetY])
-			cube([springWidth - archOuterDiameter, stepsGap, springHeight], center=true);
-	}
+	translate([positionX, positionY])
+		difference()
+		{
+			cylinder(height, d=diameter);
+			cylinder(height, d=holeDiameter);
+			translate([cubePositionX, cubePositionY])
+				cube([diameter, diameter, 3]);
+		}
 }
 
-module line()
+module line(sizeX=100, sizeY=100, sizeZ=100, positionX="center", positionY="center")
 {
-	lineWidth = springWidth - archOuterDiameter;
-	cube([lineWidth, springThickness, springHeight], center=true);
+	positionX = positionX == "center"
+		? sizeX / -2
+		: positionX;
+	positionY = positionY == "center"
+		? sizeY / -2
+		: positionY;
+
+	translate([positionX, positionY])
+		cube([sizeX, sizeY, sizeZ]);
 }
 
-module tip()
+module tip(height, diameter, positionX="center", positionY="center")
 {
-	cylinder(springHeight, d=springThickness, center=true);
+	positionX = positionX == "center"
+		? diameter / -2
+		: positionX;
+	positionY = positionY == "center"
+		? diameter / -2
+		: positionY;
+
+	translate([positionX, positionY])
+		cylinder(height, d=diameter);
 }
