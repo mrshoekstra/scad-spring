@@ -17,29 +17,33 @@ Steps_count = 15; // [2:1:100]
 Steps_gap = 3.75; // [1:0.25:20]
 
 /* [Ends] */
+// Set the width of the start and end of the spring
+Ends_width = 0; // [0:Default, 2:Half, 1:Full];
 // Make the start and end tips of the spring rounded
 Ends_rounded = true;
 
 /* [Hidden] */
 $fn = $preview ? Preview_resolution : 128;
+
 springHeight = Spring_height;
 springThickness = Spring_thickness;
 springWidth = Spring_width;
 stepsCount = Steps_count;
 stepsGap = Steps_gap;
+endsWidth = Ends_width;
 endsRounded = Ends_rounded;
 
-minWidth = stepsGap * 1.5 + springThickness * 2;
+springWidthMin = stepsGap * 1.5 + springThickness * 2;
 partPosition = stepsGap + springThickness;
-archOuterDiameter = stepsGap + springThickness * 2;
-archPositionX = (springWidth - archOuterDiameter) / 2;
-archPositionY = archOuterDiameter / 2;
-lineWidth = springWidth - archOuterDiameter;
+archDiameter = stepsGap + springThickness * 2;
+archPositionX = (springWidth - archDiameter) / 2;
+archPositionY = archDiameter / 2;
+lineWidth = springWidth - archDiameter;
 springDepth = partPosition * (stepsCount - 1) + springThickness;
 
 assert(
-	springWidth >= minWidth,
-	str("Width \"", springWidth, "\" is too small for the current Gap and Thickness settings. Width must be at least: \"", minWidth, "\" (Gap x 1.5 + Thickness x 2)")
+	springWidth >= springWidthMin,
+	str("Width \"", springWidth, "\" is too small for the current Gap and Thickness settings. Width must be at least: \"", springWidthMin, "\" (Gap x 1.5 + Thickness x 2)")
 );
 
 echo(str("Spring depth: ", springDepth, "mm"));
@@ -52,23 +56,13 @@ module spring()
 	translate([0, springPositionY])
 		union()
 		{
-			if (endsRounded)
-			{
-				tipPositionX = (springWidth - archOuterDiameter) * -0.5;
-				tipPositionY = springThickness / 2;
-				tip(springHeight, springThickness, tipPositionX, tipPositionY);
-
-				tipPositionX2 = (springWidth - archOuterDiameter) * (stepsCount % 2 ? 0.5 : -0.5);
-				tipPositionY2 = partPosition * (stepsCount - 1) + springThickness / 2;
-				tip(springHeight, springThickness, tipPositionX2, tipPositionY2);
-			}
-
+			// Spring
 			stepsCountMax = stepsCount / 2 - 1;
 
 			for (step = [0 : stepsCountMax])
 			{
 				translate([0, step * 2 * partPosition])
-					part();
+					part(step == 0);
 
 				if (step < stepsCountMax)
 				{
@@ -78,15 +72,43 @@ module spring()
 				}
 			}
 
+			// Ends lines
+			endsLineWidth = endsWidth == 0
+				? lineWidth - (endsRounded ? springThickness / 2 : 0)
+				: springWidth / endsWidth - archDiameter / 2 - (endsRounded ? springThickness / 2 : 0);
+			linePositionX = endsWidth == 0
+				? endsLineWidth / -2 - (endsRounded ? springThickness / 4 : 0)
+				: lineWidth / -2;
 			linePositionY = (stepsCount - 1) * partPosition;
-			line(lineWidth, springThickness, springHeight, positionY=linePositionY);
+
+			mirror([stepsCount % 2 ? 0 : 1, 0, 0])
+				line(endsLineWidth, springThickness, springHeight, linePositionX, linePositionY);
+			mirror([1, 0, 0])
+				line(endsLineWidth, springThickness, springHeight, linePositionX, 0);
+
+			// Ends tips
+			if (endsRounded)
+			{
+				tipPositionX = springWidth / -2 + archDiameter / 2 + endsLineWidth;
+				tipPositionY1 = springThickness / 2;
+				tipPositionY2 = partPosition * (stepsCount - 1) + springThickness / 2;
+
+				mirror([1, 0, 0])
+					tip(springHeight, springThickness, tipPositionX, tipPositionY1);
+				mirror([stepsCount % 2 ? 0 : 1, 0, 0])
+					tip(springHeight, springThickness, tipPositionX, tipPositionY2);
+			}
 		}
 }
 
-module part()
+module part(first=false)
 {
-	line(lineWidth, springThickness, springHeight, positionY=0);
-	arch(springHeight, archOuterDiameter, springThickness, archPositionX, archPositionY);
+	if (!first)
+	{
+		line(lineWidth, springThickness, springHeight, positionY=0);
+	}
+
+	arch(springHeight, archDiameter, springThickness, archPositionX, archPositionY);
 }
 
 module arch(height, diameter, thickness, positionX="center", positionY="center")
