@@ -131,7 +131,7 @@ module arch(height, diameter, thickness, positionX="center", positionY="center")
 			cylinder(height, d=diameter);
 			cylinder(height, d=holeDiameter);
 			translate([cubePositionX, cubePositionY])
-				cube([diameter, diameter, 3]);
+				cube([diameter, diameter, height]);
 		}
 }
 
